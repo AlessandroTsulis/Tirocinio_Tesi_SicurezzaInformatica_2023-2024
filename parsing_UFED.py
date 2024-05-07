@@ -8,33 +8,16 @@ import SQLiteParser #libreria per il parsing di database
 #FAI UNA FUNZIONE PER OGNI APPLICAZIONE
 
 def paypal(): #funzione che fa il parsing dei database di paypal
+    pass
     #TODO
     
 def ryanair():
+    pass
     #TODO
     
 
-
-def stampa(stringa): #funzione per stampare su un file per il debugging visto che non riesco a fare il print sul trace window di UFED 
-    
-    with open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\stampa.txt','a') as file: #file che contiene le stampe per il debugging visto che non si riesce a stampare sul trace window di UFED, con a si fa l'append invece che w+ prla scrittura, with serve per sostituire il try/except/finnaly per l'error-handling ed è più elegante e non necessita del file.close
-        file.write(str(stringa)+"\n") #traformo in stringa perchè passandogli non stringe da errore
-        
-    #print("This is an error message.", file=sys.stderr) 
-    
-    '''f=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\stampa.txt','w+') #file di stampa che simula stdout, visto che non riesco a stampare sul trace window di ufed
-    f.write(stringa) #trasformo in stringa cellulare che è di tipo FileSystemProxy altrimenti da errore
-    #f.write(" altra scritta")
-    f.close()'''
-    
-    
-def puliscistampa(): #funzione per rendere vuoto il file di stampa
-    with open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\stampa.txt','w+') as file: 
-        file.write("")
-    
-
-def main():
-    puliscistampa() #pulisci dalle stampe precedenti il file di stampa
+def main():    
+    print("******NUOVA ESECUZIONE********")
     
     parsing=FileSystem("Parsing")
     
@@ -42,41 +25,30 @@ def main():
     
     localapp=SQLiteParser.Database.FromNode(cellulare['/data/data/com.android.vending/databases/localappstate.db']) #fai il parsing del database localappstate.db
     
-    '''stampa(db)
-    stampa(db.DBNode)
-    stampa(db.DBWalNode)
-    stampa(db.Tables)'''
-    
     listapp=[]
-    #ins_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+')
-    #dis_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_disintallate.txt','w+')
-    with open ('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+') as ins_app:
-        for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
-        #stampa(riga) 
-            ins_app.write(riga.split(' ')[0]+"\n")
-            listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista
-    #ins_app.close()
+    ins_app = CarvedString() #crea un modello CarvedString per salvare l'elenco delle applicazioni installate
+    dis_app = CarvedString() #crea un modello CarvedString per salvare l'elenco delle applicazioni disinstallate
     
-    with open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_disintallate.txt', 'w+') as dis_app:
-        for record in localapp['appstate']: #leggi i record della colonna del database appstate
-            #stampa(record)
-            #stampa(record['package_name'].Value)
-            if record['package_name'].Value not in listapp: #se non è presente nella lista delle app installate
-                dis_app.write(str(record['package_name'].Value)+"\n")
-                #stampa(record['package_name'].Value)
-    #dis_app.close()
-    
+    ins_app.Value.Value="" #assegna il valore della stringa (visualizzato come String in UFED)
+    for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
+        #print(riga) 
+        listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista
+        ins_app.Value.Value=ins_app.Value.Value+(riga.split(' ')[0])+"\n" #aggiungi l'applicazione alla lista di quelle installate
         
-    #CERCA DI CAPIRE COME CREARE DUE FILE CHE CONTENGANO I FILE app_installate e app_disinstallate(DOVRESTI MODIFICARE LA PROPRIETà .DATA DELL'OGGETTO FILE, SOTTO CI SONO DELLE PROVE COMMENTANTE)
-    #FORSE UTILE https://docs.python.org/3/library/io.html PER I FILE BINARI
+    ins_app.Source.Value="App installate" #imposta l'attributo source dell'oggetto, pensa se è meglio mettere i database come /data/system/packages.list
+    ins_app.Deleted=DeletedState.Intact #imposta il fatto che l'elemento non è stato cancellato
     
-    
-    '''f= File ("fileprova.txt")
-
-    file=open ('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt', "rb")
-    
-    f.Data= MemoryRange(Chunk(file,0,0))
-    #f.Data= MemoryRange(Chunk(Stream(ins_app),0,0))'''
+    dis_app.Value.Value=""
+    for record in localapp['appstate']: #leggi i record della colonna del database appstate
+            #print(record)
+            #print(record['package_name'].Value)
+        if record['package_name'].Value not in listapp: #se non è presente nella lista delle app installate
+            #print(record['package_name'].Value)
+            dis_app.Value.Value=dis_app.Value.Value+(str(record['package_name'].Value))+"\n" #aggiungi l'applicazione alla lista di quelle disinstallate
+            
+                
+    dis_app.Source.Value="App disinstallate" 
+    dis_app.Deleted=DeletedState.Intact
     
     for app in listapp: #puoi anche fare direttamente con if any("paypal" in app for app in listapp)
         if "paypal" in app: #se è presente paypal nelle app installate
@@ -86,28 +58,19 @@ def main():
         
         if "ryanair" in app:
             ryanair()
- 
-    
-       '''if "paypal" in listapp: #se è presente paypal nelle app installate
-        parsing.Children.Add(Directory("paypal")) #aggiungi la cartella paypal al parsing
-        parsing.Children.Add(File("prova"))'''
-    
     
     ds.FileSystems.Add(parsing) #aggiungi il filesystem al datastore
     
+    ds.Models.Add(ins_app) #aggiungi il modello al datastore 
+    ds.Models.Add(dis_app)
     
-    
-    '''stampa(cellulare['/data/system/packages.list'])
-    
-    
-    stampa(cellulare['/data/system/packages.list'].Data)
-    
-    stampa(cellulare['/data/system/packages.list'].Data.read())'''
-    
-    '''stampa("prova")
-    stampa(cellulare)'''
 
-   
+    #DA QUI PEZZI DI CODICE CHE POSSONO ESSERE EVENTUALMENTE UTILI(PENSA SE CANCELLARLI)
+    
+    '''print(db)
+    print(db.DBNode)
+    print(db.DBWalNode)
+    print(db.Tables)'''
 
     '''d= Directory("mydirectory3") #crea il nodo di tipo directory "mydirectory3"
     d.Children.Add(File("fileprova.txt")) #aggiungi alla directory il file fileprova.txt 
@@ -120,8 +83,6 @@ def main():
 
     fs.Children.Add(Node("prova",NodeType.File)) #aggiungi un nodo al file system appena creato'''
     
-    #print(cellulare, stdout=(open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\stampa.txt','w+'))) #non funziona, CI SONO ALCUNI MODI DI FARE LE COSE IN PYTHON CHE IMPORTATI IN UFED NON FUNZIONANO NON SO PERCHè, FORSE PERCHè POTREBBE BASARSI SU IRONPYTHON2.7(CHE IN TEORIA è SOLO LA GUI, MA NON HO ALTRE IPOTESI)
-    
     #cellulare.Children.Add(Node("directory2",NodeType.Directory)) #aggiungi una directory al filesystem
 
     #ds.FileSystems[0].Children.Add(Directory("mydirectory4")) #aggiungi una directory al filesystem senza usare variabili
@@ -129,6 +90,12 @@ def main():
     #f2=File("fileprova.txt") #crea un nodo di tipo File
     
     #ds.FileSystems[0].Children.Add(Node("nuova_directory",NodeType.Directory))
+
+
+    #ins_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+')
+    #dis_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_disintallate.txt','w+')
+    #with open ('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+') as ins_app:
+    #with open ('C:\\Users\\alessandro.tsulis\\Desktop\\ROBA_TESI\\app_installate.txt','w+') as ins_app:
 
      
 '''if __name__ == '__main__': #FACENDO COSì NON VA, CI SONO ALCUNI MODI DI FARE LE COSE IN PYTHON CHE IMPORTATI IN UFED CON SCRIPT ESTERNI NON FUNZIONANO NON SO PERCHè, FORSE PERCHè POTREBBE BASARSI SU IRONPYTHON2.7(CHE IN TEORIA è SOLO LA GUI, MA NON HO ALTRE IPOTESI)
