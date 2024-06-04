@@ -2,7 +2,7 @@
 #script per arricchire le applicazioni e gli elementi già presenti del datastore
 #ricorda di importare questo script come applicative scope perchè va a modificare gli elementi InstalledApplication già presenti del data tree (pensa anche se ha senso eliminare i parsing impropri, come le posizione di JustEat)
 import physical #per utilizzare le API di UFED in script esterni in applicative scope
-import PAphysical
+import PAphysical as PA
 
 
 def Enrich_App(): #funzione che calcola l'elenco delle applicazioni installate e disinstallate e ne arricchisce le informazoni (cambiala in tipo Enrich_App)
@@ -45,9 +45,18 @@ def Enrich_App(): #funzione che calcola l'elenco delle applicazioni installate e
 def main():
     print("******NUOVA ESECUZIONE********")
     
-    for i in ds.Models:
-        print(i)
-
-
+    #cerca di accedere a tutte le InstalledApplication per poi modificare le informazioni delle app evidenziando le app disinstallate e aggiungendo l'hash(Gass.db) e i permessi dell'applicazioni(Runtimepermission.xml)
+    #e eventualmente il timestamp dell'ultimo aggiornamento(localappstate.db)
+    
+    
+    for i in ds.Models: 
+        for p in i:
+            #print(p) NON STAMPARE COSì CHE CRASHA UFED
+    
+    #for i in PA.InstalledApplication:
+     #   print(i[1])
+    
+    
+    
 
 main()

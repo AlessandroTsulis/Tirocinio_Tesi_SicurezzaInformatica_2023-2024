@@ -1,4 +1,4 @@
-# coding=utf-8 per definire l'encoding
+# coding=utf-8 per definire l'encoding (altrimenti da errore)
 #script per fare il parsing dei database di applicazioni non considerate da UFED e aggiungere nuovi elementi al datastore
 #importa questo script come decoding scope, ricorda che se vuoi aggiungere degli elementi al data tree d utilizzare il decoding scope (l'applicative scope serve modificare elementi già presenti) 
 from physical import * #per utilizzare le API UFED in script esterni (librerie per il decoding scope)
@@ -7,7 +7,6 @@ import sys
 import SQLiteParser #libreria per il parsing di database
 import datetime #modello per trasformare da timestamp a datetime
 from System.Convert import IsDBNull #per controllare se un record di un database è Null
-#import numpy as np
 import time
 
 #PENSA SE USARE GLOBAL NEL MAIN INVECE CHE METTERE LE VARIABILI QUI
@@ -24,9 +23,16 @@ def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni ins
 #FAI UNA FUNZIONE PER OGNI APPLICAZIONE (PENSA SE USARE LE CLASSI COME NELL'ESEMPIO FIREFOX_PARSER)
 
 
-def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal
-    pass
-    #TODO
+def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile solo il parsing del file last_exit_info)
+    last_exit=CarvedString() 
+    
+    last_exit.Deleted=DeletedState.Intact
+    last_exit.Source.Value="Paypal"
+    
+    ts=cellulare['/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
+    last_exit.Value.Value="Ultima uscita dall'applicazione: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))
+    
+    ds.Models.Add(last_exit)
     
 def Ryanair_Parsing():
     frlocal_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.ryanair.cheapflights/databases/fr-local-db'])
