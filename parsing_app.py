@@ -24,15 +24,16 @@ def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni ins
 
 
 def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile solo il parsing del file last_exit_info)
-    last_exit=CarvedString() 
+    WebView_LastExit('/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info',"Paypal")
+    ##last_exit=CarvedString() 
     
-    last_exit.Deleted=DeletedState.Intact
-    last_exit.Source.Value="Paypal"
+    ##last_exit.Deleted=DeletedState.Intact
+    ##last_exit.Source.Value="Paypal"
     
-    ts=cellulare['/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
-    last_exit.Value.Value="Ultima uscita dall'applicazione: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))
+    ##ts=cellulare['/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
+    ##last_exit.Value.Value="Ultima uscita dall'applicazione: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))
     
-    ds.Models.Add(last_exit)
+    ##ds.Models.Add(last_exit)
     
 def Ryanair_Parsing():
     frlocal_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.ryanair.cheapflights/databases/fr-local-db'])
@@ -94,7 +95,85 @@ def JustEat_Parsing():
         
         posizione.Address.Value=ind
         
-        ds.Models.Add(posizione)
+        ###ds.Models.Add(posizione)
+
+def GoogleQuickSearchBox_Parsing(): #funzione che fa il parsing di Google Quick Search Box
+    WebView_LastExit('/data/data/com.google.android.googlequicksearchbox/app_webview/last-exit-info',"Google Quick Search Box")
+     
+def Outlook_Parsing():
+    WebView_LastExit('/data/data/com.microsoft.office.outlook/app_webview/last-exit-info',"Outlook")
+     
+def Facebook_Parsing():
+    WebView_LastExit('/data/data/com.facebook.katana/app_webview_embedded/last-exit-info',"Facebook") #fai il parsing dell'ultima uscita dalla WebView di Facebook compresa la WebView associata al browser
+
+def Telegram_Parsing():
+    WebView_LastExit('/data/data/org.telegram.messenger/app_webview/last-exit-info',"Telegram")
+     
+def Gmail_Parsing():
+    WebView_LastExit('/data/data/com.google.android.gm/app_webview/last-exit-info',"Gmail")
+    
+def GooglePlay_Parsing():
+    WebView_LastExit('/data/data/com.google.android.gms/app_webview/last-exit-info',"Google Play")
+
+def Eurosport_Parsing():
+    WebView_LastExit('/data/data/com.eurosport/app_webview/last-exit-info',"Eurosport")
+    
+def McDonalds_Parsing():
+    WebView_LastExit('/data/data/com.mcdonalds.mobileapp/app_webview/last-exit-info',"McDonald's")
+
+def Instagram_Parsing():
+    WebView_LastExit('/data/data/com.instagram.android/app_webview/last-exit-info',"Instagram")
+
+def LaGazzettaDelloSport_Parsing():
+    WebView_LastExit('/data/data/it.rcs.gazzettaflash/app_webview/last-exit-info',"La Gazzetta dello Sport")
+
+def IntesaSanPaoloMobile_Parsing():
+    WebView_LastExit('/data/data/com.latuabancaperandroid/app_webview/last-exit-info',"Intesa San Paolo Mobile")
+    
+def SamsungApps_Parsing():
+    WebView_LastExit('/data/data/com.sec.android.app.samsungapps/app_webview/last-exit-info',"Samsung Apps")
+
+def LegheFC_Parsing():
+    WebView_LastExit('/data/data/it.quadronica.leghe/app_webview/last-exit-info',"Leghe FC")
+    
+def WhatsApp_Parsing():
+    WebView_LastExit('/data/data/com.whatsapp/app_webview/last-exit-info',"WhatsApp")
+    
+def CaptivePortalLogin_Parsing(): #servizio di login per portal captive dove i portal captive è una pagina web che gli utenti devono visualizzare e interagire prima di accedere a una rete pubblica Wi-Fi
+    WebView_LastExit('/data/data/com.google.android.captiveportallogin/app_webview/last-exit-info',"Captive Portal Login")
+
+def Trenitalia_Parsing():
+    WebView_LastExit('/data/data/com.lynxspa.prontotreno/app_webview/last-exit-info',"Trenitalia")
+    
+def Unicredit_Parsing():
+    WebView_LastExit('/data/data/com.unicredit/app_webview/last-exit-info',"Unicredit")
+
+def ItaloTreno_Parsing():
+    WebView_LastExit('/data/data/it.italotreno/app_webview/last-exit-info',"Italo Treno")
+    
+def SamsungAccount_Parsing():
+    WebView_LastExit('/data/data/com.osp.app.signin/app_webview/last-exit-info',"Samsung Account")
+    
+def GoogleDrive_Parsing():
+    WebView_LastExit('/data/data/com.google.android.apps.docs/app_webview/last-exit-info',"Google Drive")
+     
+def Microsoft365Office_Parsing():
+    WebView_LastExit('/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officehubrow/last-exit-info',"Microsoft 365(Office)")
+    
+def Upday_Parsing():
+    WebView_LastExit('/data/data/de.axelspringer.yana.zeropage/app_webview/last-exit-info',"Upday")
+
+def Vodafone_Parsing():
+    WebView_LastExit('/data/data/it.vodafone.my190/app_webview/last-exit-info',"Vodafone")
+    
+def ATMMilano_Parsing():
+    WebView_LastExit('/data/data/it.atm.appmobile/app_webview/last-exit-info',"ATM Milano Mobile")
+    
+def Teams_Parsing():
+    WebView_LastExit('/data/data/com.microsoft.teams/app_webview/last-exit-info',"Teams")
+    
+def Youtube_Parsing():
+    WebView_LastExit('/data/data/com.google.android.youtube/app_webview/last-exit-info',"Youtube")
 
 def int64_to_unixtimestamp(tp):  #funzione che trasforma da int64 a unixtimestamp     
     dt=datetime.datetime.fromtimestamp(tp/1000) #trasforma da timestamp a datetime, il timestamp è in millisecondi quindi si divide per 1000, se fosse in microsecondi dividi per 1000000, in nanosecondi dividi per 1000000000
@@ -107,12 +186,41 @@ def int64_to_unixtimestamp(tp):  #funzione che trasforma da int64 a unixtimestam
     
     return unixtp
 
+def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit-info della WebView di android frequente in molte app prendendo come parametri il percorso del file e il nome dell'app
+    last_exit=CarvedString() 
+    
+    last_exit.Deleted=DeletedState.Intact
+    last_exit.Source.Value=name
+        
+    ts=cellulare[path].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
+    
+    if(name=="Facebook"): #facebook ha il last-exit-info sia della WebView e sia della WebView associata ad un browser
+        ts_browser=cellulare['/data/data/com.facebook.katana/app_browser_proc_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp di last-exit-info che si riferisce al webview del browser
+        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))+"\nUltima uscita dalla WebView del browser: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_browser[1]))))  
+        #ds.Models.Add(last_exit)
+        
+    elif(name=="Google Play"): #Google Play ha il last-exit info sia della WebView e sia della WebView associata a AdMob
+        ts_admob=cellulare['/data/data/com.google.android.gms/app_webview_admob-service/last-exit-info'].Data.read().split(',')[1].split(':')
+        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))+"\nUltima uscita dalla WebView di AdMob: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_admob[1]))))  
+        #ds.Models.Add(last_exit)
+        
+    elif(name=="Microsoft 365(Office)"): #Microsoft 365 ha il last-exit info sia della WebView riferita all'applicazione generale e sia della WebView associata specifichitamente ad Excel
+        ts_excel=cellulare['/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officemobile.excel/last-exit-info'].Data.read().split(',')[1].split(':')
+        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))+"\nUltima uscita dalla WebView di Excel: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_excel[1]))))  
+        #ds.Models.Add(last_exit)
+    else:
+        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1])))) #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
+        #ds.Models.Add(last_exit)
+    
+    ds.Models.Add(last_exit)
 
 def main():    
     print("******NUOVA ESECUZIONE********")
     
     Check_Installed_App()
     ###parsing=FileSystem("Parsing")
+    f_gmail=False #flag per controllare più occorrenze di gmail
+    f_grdive=False #flag per controllare più occorrenze googledrive
     
     for app in listapp: #puoi anche fare direttamente con if any("paypal" in app for app in listapp)
         if "paypal" in app: #se è presente paypal nelle app installate
@@ -125,6 +233,89 @@ def main():
             
         if "justeat" in app:
             JustEat_Parsing()
+        
+        if "googlequicksearchbox" in app:
+            GoogleQuickSearchBox_Parsing()
+            
+        if "outlook" in app:
+            Outlook_Parsing()
+        
+        if "facebook.katana" in app:
+            Facebook_Parsing()
+        
+        if "telegram" in app:
+            Telegram_Parsing()
+            
+        if "com.google.android.gm" in app:
+            if (f_gmail==False): #se non è stato ancora trovata una corrispondenza tra la lista di app
+                Gmail_Parsing()
+                f_gmail=True #la corrispondeza è già stata trovata quindi metti a True il flag in modo da evitare di aggiungere più volte la stessa cosa essendo che gmail ha più rispondenti
+            
+            
+        if "play.games" in app:
+            GooglePlay_Parsing()
+        
+        if "eurosport" in app:
+            Eurosport_Parsing()
+        
+        if "mcdonalds" in app:
+            McDonalds_Parsing()
+            
+        if "instagram" in app: 
+            Instagram_Parsing()
+            
+        if "gazzetta" in app:
+            LaGazzettaDelloSport_Parsing()
+            
+        if "latuabancaperandroid" in app:
+            IntesaSanPaoloMobile_Parsing()
+            
+        if "samsungapps" in app:
+            SamsungApps_Parsing()
+            
+        if "quadronica.leghe" in app:
+            LegheFC_Parsing()
+        
+        if "whatsapp" in app:
+            WhatsApp_Parsing()
+        
+        if "google.android.captiveportallogin" in app:
+            CaptivePortalLogin_Parsing()
+        
+        if "prontotreno" in app:
+            Trenitalia_Parsing()
+        
+        if "unicredit" in app:
+            Unicredit_Parsing()
+            
+        if "italotreno" in app:
+            ItaloTreno_Parsing()
+            
+        if "osp.app" in app:
+            SamsungAccount_Parsing()
+            
+        if "com.google.android.apps.docs" in app:
+            if (f_grdive==False):
+                GoogleDrive_Parsing()
+                f_grdive=True
+         
+        if "officehubrow" in app:
+            Microsoft365Office_Parsing()
+        
+        if "yana.zeropage" in app:  
+            Upday_Parsing()
+            
+        if "atm.appmobile" in app:
+            ATMMilano_Parsing()
+            
+        if "teams" in app:
+            Teams_Parsing()
+        
+        if "youtube" in app:
+            Youtube_Parsing()
+          
+        if "vodafone" in app:
+            Vodafone_Parsing()
             
     
     ###ds.FileSystems.Add(parsing) #aggiungi il filesystem al datastore
