@@ -9,13 +9,30 @@ import datetime #modello per trasformare da timestamp a datetime
 from System.Convert import IsDBNull #per controllare se un record di un database è Null
 import time
 
+
+
 #PENSA SE USARE GLOBAL NEL MAIN INVECE CHE METTERE LE VARIABILI QUI
 cellulare=ds.FileSystems[0] #accedi al primo filesystem presente, se l'acquisizione è un cellulare allora è il filesystem del cellulare vale per una full file system
 listapp=[] #lista delle applicazioni installate del cellulare
 
-def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni installate    
-    localapp_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.android.vending/databases/localappstate.db']) #fai il parsing del database localappstate.db
+def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge ad un file 
+    hashlist={} #dizionario che contiene le applicazioni e i loro hash
+    gass_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.google.android.gms/databases/gass.db'])
     
+    for pacchetto in gass_db['app_info']:
+        hashlist[pacchetto['package_name'].Value]=pacchetto['digest_sha256'].Value #COSì DOVREBBE PRENDERTI SOLO IL PRIMO PACKAGE NAME CHE TROVA CHE DOVREBBE ESSERE IL PIù RECENTE, MA NON è SEMPRE COSì (COME FACEBOOK O TELEGRAM) QUINDI CONTROLLA MEGLIO
+    #    for hash in gass_db['app_info']:
+    #        hashlist[pacchetto['package_name'].Value]=hash['digest_sha256'].Value 
+    
+    #for i in range(len(gass_db['app_info'])):
+    #    pacchetto = gass_db['package_name'][i]
+    #    hash = gass_db['digest_sha256'][i]
+    #    hashlist[pacchetto] = hash
+    
+    
+    print(hashlist)
+
+def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni installate    
     for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
         #print(riga) 
         listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista delle app installate
@@ -216,6 +233,8 @@ def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit
 
 def main():    
     print("******NUOVA ESECUZIONE********")
+    
+    Check_Hash()
     
     Check_Installed_App()
     ###parsing=FileSystem("Parsing")
