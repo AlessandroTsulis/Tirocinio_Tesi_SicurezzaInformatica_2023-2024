@@ -15,12 +15,38 @@ import time
 cellulare=ds.FileSystems[0] #accedi al primo filesystem presente, se l'acquisizione è un cellulare allora è il filesystem del cellulare vale per una full file system
 listapp=[] #lista delle applicazioni installate del cellulare
 
+
+def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni installate    
+    for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
+        #print(riga) 
+        listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista delle app installate
+
+
 def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge ad un file 
-    hashlist={} #dizionario che contiene le applicazioni e i loro hash
+    ##hashlist={} #dizionario che contiene le applicazioni e i loro hash
     gass_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.google.android.gms/databases/gass.db'])
     
-    for pacchetto in gass_db['app_info']:
-        hashlist[pacchetto['package_name'].Value]=pacchetto['digest_sha256'].Value #COSì DOVREBBE PRENDERTI SOLO IL PRIMO PACKAGE NAME CHE TROVA CHE DOVREBBE ESSERE IL PIù RECENTE, MA NON è SEMPRE COSì (COME FACEBOOK O TELEGRAM) QUINDI CONTROLLA MEGLIO
+    ##for pacchetto in gass_db['app_info']:
+    ##    hashlist[pacchetto['package_name'].Value]=pacchetto['digest_sha256'].Value #riempi il dizionario con chiave nome del pacchetto e valore l'hash (prende sempre il primo elemento del database con quel nome di pacchetto e quindi prende la versione più recente ovvero quella installata sul dispositivo)
+    
+    #print(hashlist)
+    
+    hash_app=CarvedString()
+    
+    hash_app.Deleted=DeletedState.Intact
+    hash_app.Source.Value="Hash App"
+
+    hash_app.Value.Value=""
+    for pacchetto in gass_db['app_info']: 
+        hash_app.Value.Value=hash_app.Value.Value+str(pacchetto['package_name'].Value)+': '+str(pacchetto['digest_sha256'].Value)+'\n' #riempi il CarvedString con il nome dei package e il loro hash
+    
+    ##for pacchetto in hashlist.keys(): #scorri tutte le chiavi del dizionario
+        ##hash_app.Value=hash_app.Value+str(pacchetto)+': '+str(hashlist[pacchetto])+'\n'
+        
+    ds.Models.Add(hash_app)
+    
+    #QUI ADESSO DEVI AGGIUNGERE UN FILE CON PACCHETTO-> HASH DA PARSARE POI IN ENRICH_APP
+    
     #    for hash in gass_db['app_info']:
     #        hashlist[pacchetto['package_name'].Value]=hash['digest_sha256'].Value 
     
@@ -28,14 +54,7 @@ def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge a
     #    pacchetto = gass_db['package_name'][i]
     #    hash = gass_db['digest_sha256'][i]
     #    hashlist[pacchetto] = hash
-    
-    
-    print(hashlist)
 
-def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni installate    
-    for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
-        #print(riga) 
-        listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista delle app installate
 
 #FAI UNA FUNZIONE PER OGNI APPLICAZIONE (PENSA SE USARE LE CLASSI COME NELL'ESEMPIO FIREFOX_PARSER)
 
@@ -65,7 +84,7 @@ def Ryanair_Parsing():
         #ricerca.Account="prova" #DA CAPIRE SE E COME SI PUò ACCEDERE AD ALCUNI ELEMENTI DEI DATABASE
         #ricerca.Parameters="prova"
         
-        ###ds.Models.Add(ricerca)
+        ds.Models.Add(ricerca)
    
     
     for profilo in frlocal_db['user_profile']: #per aggiungere account utente ryanair
@@ -90,7 +109,7 @@ def Ryanair_Parsing():
         account.Notes.Add("data di nascita: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['birth_date'].Value)))) #aggiungi alle note del profilo la data di nascita
         
         
-        ###ds.Models.Add(account) #aggiungi l'account all'elenco dei modelli account presenti
+        ds.Models.Add(account) #aggiungi l'account all'elenco dei modelli account presenti
         
 
 def JustEat_Parsing():
@@ -112,7 +131,7 @@ def JustEat_Parsing():
         
         posizione.Address.Value=ind
         
-        ###ds.Models.Add(posizione)
+        ds.Models.Add(posizione)
 
 def GoogleQuickSearchBox_Parsing(): #funzione che fa il parsing di Google Quick Search Box
     WebView_LastExit('/data/data/com.google.android.googlequicksearchbox/app_webview/last-exit-info',"Google Quick Search Box")
@@ -234,9 +253,9 @@ def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit
 def main():    
     print("******NUOVA ESECUZIONE********")
     
-    Check_Hash()
-    
     Check_Installed_App()
+    
+    Check_Hash()
     ###parsing=FileSystem("Parsing")
     f_gmail=False #flag per controllare più occorrenze di gmail
     f_grdive=False #flag per controllare più occorrenze googledrive
