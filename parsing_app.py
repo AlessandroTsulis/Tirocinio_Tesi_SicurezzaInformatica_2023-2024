@@ -8,6 +8,10 @@ import SQLiteParser #libreria per il parsing di database
 import datetime #modello per trasformare da timestamp a datetime
 from System.Convert import IsDBNull #per controllare se un record di un database è Null
 import time
+import httplib #libreria per fare le HTTP request
+
+#GUARDA IL PARSING DELLE SEGUENTI APP-> #TEAMVIEWER, ANDORID AUTO, ZOOM, BOOKING, GLOVO, DELIVEROO, NETFLIX, ITALO, TRENITALIA, FLIXBUS, CHESS(PER IL DISCORSO DI FARE L'ESEMPIO CHE ALCUNE APP TENGONO TRACCIA DELLE CHAT, QUINDI MANDA UN MESSAGGIO A MICHELE PRIMA DI FARE QUESTA COSA)
+
 
 
 
@@ -37,9 +41,17 @@ def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge a
     hash_app.Source.Value="Hash App"
 
     hash_app.Value.Value=""
+    number_request=0 #numero della richiesta HTTP a Virus Total
     for pacchetto in gass_db['app_info']: 
-        hash_app.Value.Value=hash_app.Value.Value+str(pacchetto['package_name'].Value)+': '+str(pacchetto['digest_sha256'].Value)+'\n' #riempi il CarvedString con il nome dei package e il loro hash
-    
+        hash_app.Value.Value=hash_app.Value.Value+str(pacchetto['package_name'].Value)+': '+str(pacchetto['digest_sha256'].Value) #riempi il CarvedString con il nome dei package e il loro hash
+        
+        if (number_request<4): #senza l'abbonamento a VirusTotal hai 4 HTTP request con l'API al minuto (teoricamente, in pratica pare che il limite sia 11, ma dopo la 5 da errori meglio non rischiare) 
+            reputation=Check_VirusTotal_Reputation(str(pacchetto['digest_sha256'].Value), "0ce5dc209e7723d66c658bcae2da3f77bed7b95ffd56171ffb38cc1e91b97436") #controlla con Virustotal il livello di reputazione dell'app tramite hash, l'api key è pubblica e non è premium
+            number_request=number_request+1
+            
+            hash_app.Value.Value=hash_app.Value.Value+" VirusTotal Reputation Score:  "+reputation+"\n" #Aggiungi il repution score di virustotal dopo l'hash dell'app
+        else:
+            hash_app.Value.Value=hash_app.Value.Value+"\n" #aggiungi un "\n" per una visualizzazione migliore
     ##for pacchetto in hashlist.keys(): #scorri tutte le chiavi del dizionario
         ##hash_app.Value=hash_app.Value+str(pacchetto)+': '+str(hashlist[pacchetto])+'\n'
         
@@ -57,6 +69,21 @@ def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge a
 
 
 #FAI UNA FUNZIONE PER OGNI APPLICAZIONE (PENSA SE USARE LE CLASSI COME NELL'ESEMPIO FIREFOX_PARSER)
+
+def Check_VirusTotal_Reputation(hash, apikey): #funzione che utilizza virustotal tramite api per sapere il livello di reputazione dell'app tramite hash 
+    conn = httplib.HTTPSConnection("www.virustotal.com")
+    conn.request("GET", "/api/v3/files/"+hash, headers={ #13582084d0cf5cc9565e231b8b66807f31dd0a4c276e44c1b8db9dd683fa824a se non va hash 
+        "accept": "application/json",
+        "x-apikey": apikey #api key del profilo su virustotal
+    })
+
+    response = conn.getresponse()
+    if (response.status == 200): #se la richiesta è andata a buon fine
+        #print(response.read())  
+        #print(response.read().split('"reputation": ')[1].split(',')[0])
+        return response.read().split('"reputation": ')[1].split(',')[0]
+
+        
 
 
 def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile solo il parsing del file last_exit_info)
@@ -266,93 +293,93 @@ def main():
             ##parsing.Children.Add(File("prova.txt"))
             Paypal_Parsing()
         
-        if "ryanair" in app:
+        elif "ryanair" in app:
             Ryanair_Parsing()
             
-        if "justeat" in app:
+        elif "justeat" in app:
             JustEat_Parsing()
         
-        if "googlequicksearchbox" in app:
+        elif "googlequicksearchbox" in app:
             GoogleQuickSearchBox_Parsing()
             
-        if "outlook" in app:
+        elif "outlook" in app:
             Outlook_Parsing()
         
-        if "facebook.katana" in app:
+        elif "facebook.katana" in app:
             Facebook_Parsing()
         
-        if "telegram" in app:
+        elif "telegram" in app:
             Telegram_Parsing()
             
-        if "com.google.android.gm" in app:
+        elif "com.google.android.gm" in app:
             if (f_gmail==False): #se non è stato ancora trovata una corrispondenza tra la lista di app
                 Gmail_Parsing()
                 f_gmail=True #la corrispondeza è già stata trovata quindi metti a True il flag in modo da evitare di aggiungere più volte la stessa cosa essendo che gmail ha più rispondenti
             
             
-        if "play.games" in app:
+        elif "play.games" in app:
             GooglePlay_Parsing()
         
-        if "eurosport" in app:
+        elif "eurosport" in app:
             Eurosport_Parsing()
         
-        if "mcdonalds" in app:
+        elif "mcdonalds" in app:
             McDonalds_Parsing()
             
-        if "instagram" in app: 
+        elif "instagram" in app: 
             Instagram_Parsing()
             
-        if "gazzetta" in app:
+        elif "gazzetta" in app:
             LaGazzettaDelloSport_Parsing()
             
-        if "latuabancaperandroid" in app:
+        elif "latuabancaperandroid" in app:
             IntesaSanPaoloMobile_Parsing()
             
-        if "samsungapps" in app:
+        elif "samsungapps" in app:
             SamsungApps_Parsing()
             
-        if "quadronica.leghe" in app:
+        elif "quadronica.leghe" in app:
             LegheFC_Parsing()
         
-        if "whatsapp" in app:
+        elif "whatsapp" in app:
             WhatsApp_Parsing()
         
-        if "google.android.captiveportallogin" in app:
+        elif "google.android.captiveportallogin" in app:
             CaptivePortalLogin_Parsing()
         
-        if "prontotreno" in app:
+        elif "prontotreno" in app:
             Trenitalia_Parsing()
         
-        if "unicredit" in app:
+        elif "unicredit" in app:
             Unicredit_Parsing()
             
-        if "italotreno" in app:
+        elif "italotreno" in app:
             ItaloTreno_Parsing()
             
-        if "osp.app" in app:
+        elif "osp.app" in app:
             SamsungAccount_Parsing()
             
-        if "com.google.android.apps.docs" in app:
+        elif "com.google.android.apps.docs" in app:
             if (f_grdive==False):
                 GoogleDrive_Parsing()
                 f_grdive=True
          
-        if "officehubrow" in app:
+        elif "officehubrow" in app:
             Microsoft365Office_Parsing()
         
-        if "yana.zeropage" in app:  
+        elif "yana.zeropage" in app:  
             Upday_Parsing()
             
-        if "atm.appmobile" in app:
+        elif "atm.appmobile" in app:
             ATMMilano_Parsing()
             
-        if "teams" in app:
+        elif "teams" in app:
             Teams_Parsing()
         
-        if "youtube" in app:
+        elif "youtube" in app:
             Youtube_Parsing()
           
-        if "vodafone" in app:
+        elif "vodafone" in app:
             Vodafone_Parsing()
             
     
