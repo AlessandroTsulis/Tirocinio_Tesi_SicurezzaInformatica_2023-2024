@@ -3,7 +3,6 @@
 #importa questo script come decoding scope, ricorda che se vuoi aggiungere degli elementi al data tree d utilizzare il decoding scope (l'applicative scope serve modificare elementi già presenti) 
 from physical import * #per utilizzare le API UFED in script esterni (librerie per il decoding scope)
 import sys
-#import shutil  #per copiare i file usa shutil
 import SQLiteParser #libreria per il parsing di database
 import datetime #modello per trasformare da timestamp a datetime
 from System.Convert import IsDBNull #per controllare se un record di un database è Null
@@ -11,25 +10,17 @@ import time
 import httplib #libreria per fare le HTTP request
 
 
-#PENSA SE USARE GLOBAL NEL MAIN INVECE CHE METTERE LE VARIABILI QUI
 cellulare=ds.FileSystems[0] #accedi al primo filesystem presente, se l'acquisizione è un cellulare allora è il filesystem del cellulare vale per una full file system
 listapp=[] #lista delle applicazioni installate del cellulare
 
 
 def Check_Installed_App(): #funzione che calcola l'elenco delle applicazioni installate    
-    for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga
-        #print(riga) 
+    for riga in cellulare['/data/system/packages.list'].Data.read().split('\n'): #leggi i dati in packages.list per riga 
         listapp.append(riga.split(' ')[0]) #prendi l'applicazione dalla riga e aggiungila alla lista delle app installate
 
 
 def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge ad un file 
-    ##hashlist={} #dizionario che contiene le applicazioni e i loro hash
     gass_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.google.android.gms/databases/gass.db'])
-    
-    ##for pacchetto in gass_db['app_info']:
-    ##    hashlist[pacchetto['package_name'].Value]=pacchetto['digest_sha256'].Value #riempi il dizionario con chiave nome del pacchetto e valore l'hash (prende sempre il primo elemento del database con quel nome di pacchetto e quindi prende la versione più recente ovvero quella installata sul dispositivo)
-    
-    #print(hashlist)
     
     hash_app=CarvedString()
     
@@ -45,11 +36,9 @@ def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge a
             reputation=Check_VirusTotal_Reputation(str(pacchetto['digest_sha256'].Value), "0ce5dc209e7723d66c658bcae2da3f77bed7b95ffd56171ffb38cc1e91b97436") #controlla con Virustotal il livello di reputazione dell'app tramite hash, l'api key è pubblica e non è premium
             number_request=number_request+1
             
-            hash_app.Value.Value=hash_app.Value.Value+" VirusTotal Reputation Score:  "+reputation+"\n" #Aggiungi il repution score di virustotal dopo l'hash dell'app
+            hash_app.Value.Value=hash_app.Value.Value+" VirusTotal Reputation Score->  "+reputation+"\n" #Aggiungi il repution score di virustotal dopo l'hash dell'app
         else:
             hash_app.Value.Value=hash_app.Value.Value+"\n" #aggiungi un "\n" per una visualizzazione migliore
-    ##for pacchetto in hashlist.keys(): #scorri tutte le chiavi del dizionario
-        ##hash_app.Value=hash_app.Value+str(pacchetto)+': '+str(hashlist[pacchetto])+'\n'
         
     ds.Models.Add(hash_app)
 
@@ -62,8 +51,6 @@ def Check_VirusTotal_Reputation(hash, apikey): #funzione che utilizza virustotal
 
     response = conn.getresponse()
     if (response.status == 200): #se la richiesta è andata a buon fine
-        #print(response.read())  
-        #print(response.read().split('"reputation": ')[1].split(',')[0])
         return response.read().split('"reputation": ')[1].split(',')[0]
 
         
@@ -71,15 +58,7 @@ def Check_VirusTotal_Reputation(hash, apikey): #funzione che utilizza virustotal
 
 def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile solo il parsing del file last_exit_info)
     WebView_LastExit('/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info',"Paypal")
-    ##last_exit=CarvedString() 
     
-    ##last_exit.Deleted=DeletedState.Intact
-    ##last_exit.Source.Value="Paypal"
-    
-    ##ts=cellulare['/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
-    ##last_exit.Value.Value="Ultima uscita dall'applicazione: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]))))
-    
-    ##ds.Models.Add(last_exit)
     
 def Ryanair_Parsing():
     frlocal_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.ryanair.cheapflights/databases/fr-local-db'])
@@ -91,8 +70,6 @@ def Ryanair_Parsing():
         ricerca.TimeStamp.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(stazione['last_usage'].Value, 'ms')) #assegna i timestamp delle ricerche, il timestamp è in millisecondi
         
         ricerca.Value.Value="From station: "+stazione['origin_station_code'].Value+" to station: "+stazione['station_code'].Value
-        #ricerca.Account="prova" #DA CAPIRE SE E COME SI PUò ACCEDERE AD ALCUNI ELEMENTI DEI DATABASE
-        #ricerca.Parameters="prova"
         
         ds.Models.Add(ricerca)
    
@@ -103,7 +80,6 @@ def Ryanair_Parsing():
         account.Username.Value=profilo['email'].Value
         account.ServiceType.Value= "com.ryanair.cheapflights"
         account.Source.Value="Ryanair"
-        #account.Source=profilo['first_name'].Source #EVENTUALMENTE DA CAPIRE MEGLIO COME UTILIZZARE SOURCE PER IMPOSTARE ANCHE SOURCE INFORMATION
         
         
         account.Deleted=DeletedState.Intact #imposta il fatto che l'elemento non è stato cancellato
@@ -136,7 +112,6 @@ def JustEat_Parsing():
         ind=StreetAddress() #crea un modello StreetAddress per memorizzare tutti i dati sull'indirizzo
         ind.Deleted=DeletedState.Intact
         ind.Street1.Value=indirizzo['street'].Value+" "+indirizzo['street_number'].Value #via e numero civico
-        #ind.HouseNumber.Value=int(indirizzo['street_number'].Value)
         ind.City.Value=indirizzo['city'].Value
         ind.PostalCode.Value=indirizzo['postcode'].Value
         
@@ -192,7 +167,7 @@ def CaptivePortalLogin_Parsing(): #servizio di login per portal captive dove i p
 def Trenitalia_Parsing():
     WebView_LastExit('/data/data/com.lynxspa.prontotreno/app_webview/last-exit-info',"Trenitalia")
     
-    adobemobile=cellulare['/data/data/com.lynxspa.prontotreno/shared_prefs/AdobeMobile_Lifecycle.xml'].Data.read() #PENSA SE USARE UNA FUNZIONE APPOSITA PER IL PARSING DI TUTTI GLI ADOMOBOBILE COME PER I LAST_EXIT
+    adobemobile=cellulare['/data/data/com.lynxspa.prontotreno/shared_prefs/AdobeMobile_Lifecycle.xml'].Data.read() #PENSA SE USARE UNA FUNZIONE APPOSITA PER IL PARSING DI TUTTI GLI ADOBEMOBOBILE COME PER I LAST_EXIT
     
     usoapp=ApplicationUsage() #aggiungi un modello per l'uso di un applicazione
     usoapp.Deleted=DeletedState.Intact
@@ -262,7 +237,6 @@ def ProtonVPN_Parsing():
         ds.Models.Add(account) #aggiungi l'account all'elenco dei modelli account presenti
 
 def Aptoide_Parsing():  
-    #da aggiungere un elenco delle notifiche e un CarvedString che contiene l'elenco delle applicazioni installat e e gli che store che aptoide utilizza
     aptoide_db= SQLiteParser.Database.FromNode(cellulare['/data/data/cm.aptoide.pt/databases/aptoide.db'])
     
     
@@ -330,9 +304,9 @@ def Teamviewer_Parsing():
  
     ds.Models.Add(stringa)
     
-def AndroidAuto_Parsing():
+#def AndroidAuto_Parsing():
     #da fare eventualmente il parsing del file primes.xml
-    pass
+    #pass
 
 #def Zoom_Parsing():
     #trovato nulla
@@ -362,7 +336,6 @@ def Booking_Parsing():
         
     
     mybooking=cellulare['/data/data/com.booking/shared_prefs/mybooking.xml'].Data.read()
-    #print (mybooking)
     
     
     account=UserAccount()
@@ -416,12 +389,10 @@ def Booking_Parsing():
     
     stringa.Value.Value="PRENOTAZIONI"+'\n'
     
-    #pin=0
+    
     for prenotazione in postbooking_db['records']: #scorri tutti i record del database postbooking (SEMBRA CHE QUESTO DATABASE VENGA SCORSO DAL BASSO VERSO L'ALTO, CONTROLLA)
         if str(prenotazione['key'].Value).endswith('.reservation.property'): #se la stringa termina con .reservation.property 
             stringa.Value.Value=stringa.Value.Value+"Luogo: "+str(prenotazione['record'].Value).split(':"')[1].split('"')[0]+"   "
-            
-            #print(str(prenotazione['record'].Value).split(':"')[1].split('"')[0].split('T'))
         
         elif str(prenotazione['key'].Value).endswith('.reservation'): #se la stringa termina esattamente con .reservation
             starttime= str(prenotazione['record'].Value).split('startDateTime":"')[1].split('"')[0].split('T')[0]+" "+str(prenotazione['record'].Value).split('startDateTime":"')[1].split('"')[0].split('T')[1]
@@ -533,10 +504,10 @@ def Italo_Parsing():
     
     ds.Models.Add(usoapp)
 
-#def FlixBus_Parsing(): #TODO
+#def FlixBus_Parsing(): 
 #    pass
     
-#def Chess_Parsing(): #TODO
+#def Chess_Parsing(): 
 #    pass
 
 
@@ -553,14 +524,6 @@ def int64_to_unixtimestamp(tp, type):  #funzione che trasforma da int64 a unixti
     
     unixtp=time.mktime(dt.timetuple()) #trasforma il datetime in timestamp unix con mktime, con .timetuple trasforma il datetame in una tupla di tipo time
     
-    
-        
-    
-    #print(TimeStamp.FromUnixTime(time.mktime(dt.timetuple())))
-    
-    ##dt=dt-datetime.datetime(1601,1,1) #calcola la differenza tra la data specificata e l'epoca FILETIME che è l'1-01-1601
-    ##filetime= dt.days * 86400 * 10**7 + (dt.seconds-3600) * 10**7 + dt.microseconds * 10 #converti in intervalli da 100 nanosecondi, si ha 1 giorno=86400 secondi e 1 secondo= 10^7  100 nanosecondi, -3600 secondi perchè tolgo 1 ora al timestamp per l'UTC
-    
     return unixtp
 
 def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit-info della WebView di android frequente in molte app prendendo come parametri il percorso del file e il nome dell'app
@@ -574,12 +537,10 @@ def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit
     if(name=="Facebook"): #facebook ha il last-exit-info sia della WebView e sia della WebView associata ad un browser
         ts_browser=cellulare['/data/data/com.facebook.katana/app_browser_proc_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp di last-exit-info che si riferisce al webview del browser
         last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]), 'ms')))+"\nUltima uscita dalla WebView del browser: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_browser[1]),'ms')))  
-        #ds.Models.Add(last_exit)
         
     elif(name=="Google Play"): #Google Play ha il last-exit info sia della WebView e sia della WebView associata a AdMob
         ts_admob=cellulare['/data/data/com.google.android.gms/app_webview_admob-service/last-exit-info'].Data.read().split(',')[1].split(':')
         last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms')))+"\nUltima uscita dalla WebView di AdMob: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_admob[1]), 'ms')))  
-        #ds.Models.Add(last_exit)
         
     elif(name=="Microsoft 365(Office)"): #Microsoft 365 ha il last-exit info sia della WebView riferita all'applicazione generale e sia della WebView associata specifichitamente ad Excel
         ts_excel=cellulare['/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officemobile.excel/last-exit-info'].Data.read().split(',')[1].split(':')
@@ -587,7 +548,6 @@ def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit
         #ds.Models.Add(last_exit)
     else:
         last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms'))) #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
-        #ds.Models.Add(last_exit)
     
     ds.Models.Add(last_exit)
 
@@ -603,8 +563,6 @@ def main():
     
     for app in listapp: #puoi anche fare direttamente con if any("paypal" in app for app in listapp)
         if "paypal" in app: #se è presente paypal nelle app installate
-            ##parsing.Children.Add(Directory("paypal")) #aggiungi la cartella paypal al parsing
-            ##parsing.Children.Add(File("prova.txt"))
             Paypal_Parsing()
             
         elif "ryanair" in app:
@@ -731,64 +689,6 @@ def main():
         
         #elif "chess" in app: 
         #    Chess_Parsing()
-            
-    
-    ###ds.FileSystems.Add(parsing) #aggiungi il filesystem al datastore
-    
-    
-
-    #DA QUI PEZZI DI CODICE CHE POSSONO ESSERE EVENTUALMENTE UTILI(PENSA SE CANCELLARLI)
-
-
-
-#def datetime_to_int32(dt):  #funzione che trasforma da datetime a int32 (SI HA COME ANNO LIMITE IL 2048 ESSENDO UN INT32, QUINDI QUANDO PUOI USA GLI ALTIRI)
-     # Epoch Unix
-#    epoch = datetime.datetime(1970, 1, 1)
-    
-    # Calcola il timestamp Unix in secondi
-#    timestamp = int((dt - epoch).total_seconds()-3600) #sottrai 3600 perchè togli 1 ora al timestamp per l'UTC
-    
-#    print(timestamp)
-#    return timestamp
-
-
-#print(type(profilo['birth_date'].Value))
-#print(TimeStamp.FromFileTime(profilo['birth_date'].Value))
-
-
-    
-    '''print(db)
-    print(db.DBNode)
-    print(db.DBWalNode)
-    print(db.Tables)'''
-
-    '''d= Directory("mydirectory3") #crea il nodo di tipo directory "mydirectory3"
-    d.Children.Add(File("fileprova.txt")) #aggiungi alla directory il file fileprova.txt 
-    
-    cellulare.Children.Add(d) #aggiungi la directory al filesystem''' 
-    
-
-    '''fs = FileSystem("mio_filesystem_12") #crea un nuovo nodo filesystem 
-    ds.FileSystems.Add (fs) #aggiungi un filestem al DataStore che comprende tutti i dati di un progetto del physical analizer, in una singola linea si fa con ds.FileSystems.Add(FileSystem("filesystem_8"))
-
-    fs.Children.Add(Node("prova",NodeType.File)) #aggiungi un nodo al file system appena creato'''
-    
-    #cellulare.Children.Add(Node("directory2",NodeType.Directory)) #aggiungi una directory al filesystem
-
-    #ds.FileSystems[0].Children.Add(Directory("mydirectory4")) #aggiungi una directory al filesystem senza usare variabili
-    
-    #f2=File("fileprova.txt") #crea un nodo di tipo File
-    
-    #ds.FileSystems[0].Children.Add(Node("nuova_directory",NodeType.Directory))
-
-
-    #ins_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+')
-    #dis_app=open('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_disintallate.txt','w+')
-    #with open ('C:\\Users\\alessandro.tsulis\\Desktop\\UFED_acquisizione\\app_installate.txt','w+') as ins_app:
-    #with open ('C:\\Users\\alessandro.tsulis\\Desktop\\ROBA_TESI\\app_installate.txt','w+') as ins_app:
-
-     
-"""if __name__ == '__main__': #FACENDO COSì NON VA, CI SONO ALCUNI MODI DI FARE LE COSE IN PYTHON CHE IMPORTATI IN UFED CON SCRIPT ESTERNI NON FUNZIONANO NON SO PERCHè, FORSE PERCHè POTREBBE BASARSI SU IRONPYTHON2.7(CHE IN TEORIA è SOLO LA GUI, MA NON HO ALTRE IPOTESI)
-    main()"""
+        
 
 main()
