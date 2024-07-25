@@ -38,8 +38,8 @@ def Enrich_App(): #funzione che arricchisce le informazioni delle applicazioni e
                     app.Description.Value='Applicazione disinstallata'
                 
                 
-                #for riga in range(hashapp.count(':')): #conta il numero di occorrenze di ':' nella stringa (tempo di esecuzione sul ROG circa 2 ore prendendo circa 470 HASH)
-                for riga in range(5): #PER EVITARE TEMPI MOLTO LUNGHI
+                for riga in range(hashapp.count(':')): #conta il numero di occorrenze di ':' nella stringa (tempo di esecuzione sul ROG circa 2 ore prendendo circa 470 HASH dalla mia acqsuisizione)
+                #for riga in range(5): #PER EVITARE TEMPI MOLTO LUNGHI
                     apphash=hashapp.split('\n')[riga].split(': ')  
                     if app.Identifier.Value == apphash[0]: #se l'applicazione è presente nel file hash app
                         app.AppGUID.Value= apphash[1] #aggiungi all'InstalledApplication il suo hash 

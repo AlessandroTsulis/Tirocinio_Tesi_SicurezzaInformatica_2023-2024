@@ -63,40 +63,41 @@ def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile s
 def Ryanair_Parsing():
     frlocal_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.ryanair.cheapflights/databases/fr-local-db'])
     
-    for stazione in frlocal_db['recent_stations']:  #Per aggiungere le ricerce effettuate
-        ricerca=SearchedItem() #crea il modello elemento cercato
-        ricerca.Source.Value="Ryanair"
-        ricerca.Deleted=DeletedState.Intact
-        ricerca.TimeStamp.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(stazione['last_usage'].Value, 'ms')) #assegna i timestamp delle ricerche, il timestamp è in millisecondi
-        
-        ricerca.Value.Value="From station: "+stazione['origin_station_code'].Value+" to station: "+stazione['station_code'].Value
-        
-        ds.Models.Add(ricerca)
-   
-    
-    for profilo in frlocal_db['user_profile']: #per aggiungere account utente ryanair
-        account=UserAccount() #crea un modello account
-        account.Name.Value=profilo['first_name'].Value+profilo['last_name'].Value #assegna al nome dell'account nome e cognome
-        account.Username.Value=profilo['email'].Value
-        account.ServiceType.Value= "com.ryanair.cheapflights"
-        account.Source.Value="Ryanair"
-        
-        
-        account.Deleted=DeletedState.Intact #imposta il fatto che l'elemento non è stato cancellato
-           
-        account.TimeCreated.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['member_since'].Value, 'ms')) #trasfroma da int64 a timestamp unix con il timestamp in millisecondi e poi da unix timestamp a timestamp di UFED e lo assegna alla data di crezione dell'account
-        
-        if IsDBNull (profilo['phone_number'].Value) == False: #se la colonna del database non è vuota, ANDREBBE FATTO OGNI VOLTA CHE SI GUARDA UNA COLONNA DI UN DATABASE ALTRIMENTI L'ASSEGNAMENTO A NULL DA ERRORE
-            cel=PhoneNumber() #crea il modello cellulare
-            cel.Value.Value=profilo['phone_number'].Value
-            account.Entries.Add(cel) #aggiungi l'entry del numero di cellulare nel profilo
-            cel.Deleted=DeletedState.Intact
-            cel.Domain.Value=" "
-        
-        account.Notes.Add("data di nascita: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['birth_date'].Value, 'ms')))) #aggiungi alle note del profilo la data di nascita
-        
-        
-        ds.Models.Add(account) #aggiungi l'account all'elenco dei modelli account presenti
+    if frlocal_db is not None:    
+        for stazione in frlocal_db['recent_stations']:  #Per aggiungere le ricerce effettuate
+            ricerca=SearchedItem() #crea il modello elemento cercato
+            ricerca.Source.Value="Ryanair"
+            ricerca.Deleted=DeletedState.Intact
+            ricerca.TimeStamp.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(stazione['last_usage'].Value, 'ms')) #assegna i timestamp delle ricerche, il timestamp è in millisecondi
+            
+            ricerca.Value.Value="From station: "+stazione['origin_station_code'].Value+" to station: "+stazione['station_code'].Value
+            
+            ds.Models.Add(ricerca)
+       
+       
+        for profilo in frlocal_db['user_profile']: #per aggiungere account utente ryanair
+            account=UserAccount() #crea un modello account
+            account.Name.Value=profilo['first_name'].Value+profilo['last_name'].Value #assegna al nome dell'account nome e cognome
+            account.Username.Value=profilo['email'].Value
+            account.ServiceType.Value= "com.ryanair.cheapflights"
+            account.Source.Value="Ryanair"
+            
+            
+            account.Deleted=DeletedState.Intact #imposta il fatto che l'elemento non è stato cancellato
+               
+            account.TimeCreated.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['member_since'].Value, 'ms')) #trasfroma da int64 a timestamp unix con il timestamp in millisecondi e poi da unix timestamp a timestamp di UFED e lo assegna alla data di crezione dell'account
+            
+            if IsDBNull (profilo['phone_number'].Value) == False: #se la colonna del database non è vuota, ANDREBBE FATTO OGNI VOLTA CHE SI GUARDA UNA COLONNA DI UN DATABASE ALTRIMENTI L'ASSEGNAMENTO A NULL DA ERRORE
+                cel=PhoneNumber() #crea il modello cellulare
+                cel.Value.Value=profilo['phone_number'].Value
+                account.Entries.Add(cel) #aggiungi l'entry del numero di cellulare nel profilo
+                cel.Deleted=DeletedState.Intact
+                cel.Domain.Value=" "
+            
+            account.Notes.Add("data di nascita: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['birth_date'].Value, 'ms')))) #aggiungi alle note del profilo la data di nascita
+            
+            
+            ds.Models.Add(account) #aggiungi l'account all'elenco dei modelli account presenti
         
 
 def JustEat_Parsing():
@@ -415,7 +416,8 @@ def Deliveroo_Parsing():
     
     posizione.TimeStamp.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(roorder.split('timestamp" value="')[1].split('"')[0]), 'ms'))
     
-    posizione.Description.Value="Ultimo metodo di pagamento: "+roorder.split('method_type">')[1].split('<')[0]
+    if 'method_type">' in roorder:
+        posizione.Description.Value="Ultimo metodo di pagamento: "+roorder.split('method_type">')[1].split('<')[0]
     
     ds.Models.Add(posizione)
     
@@ -480,7 +482,8 @@ def Netflix_Parsing():
         for network in apphistory['sessionNetworkStatistics']:
             if int(evento['playableId'].Value)==int(network['streamId'].Value): #se il contenuto è lo stesso in entrambe le tabelles
                 utilizzoapp.Value.Value=utilizzoapp.Value.Value+" IP: "+network['ip'].Value+" tipologia connessione: "+network['networkType'].Value+"\n" #aggiungi le informazioni relative alle connessioni utilizzate per il contenuto
-        
+            else:
+                utilizzoapp.Value.Value=utilizzoapp.Value.Value+"\n"
     
     
     ds.Models.Add(utilizzoapp)
@@ -531,25 +534,28 @@ def WebView_LastExit(path, name): #funzione che fa il parsing del file last-exit
     
     last_exit.Deleted=DeletedState.Intact
     last_exit.Source.Value=name+"(WebView)"
-        
-    ts=cellulare[path].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
     
-    if(name=="Facebook"): #facebook ha il last-exit-info sia della WebView e sia della WebView associata ad un browser
-        ts_browser=cellulare['/data/data/com.facebook.katana/app_browser_proc_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp di last-exit-info che si riferisce al webview del browser
-        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]), 'ms')))+"\nUltima uscita dalla WebView del browser: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_browser[1]),'ms')))  
+    if cellulare[path] is not None:
+        ts=cellulare[path].Data.read().split(',')[1].split(':') #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
         
-    elif(name=="Google Play"): #Google Play ha il last-exit info sia della WebView e sia della WebView associata a AdMob
-        ts_admob=cellulare['/data/data/com.google.android.gms/app_webview_admob-service/last-exit-info'].Data.read().split(',')[1].split(':')
-        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms')))+"\nUltima uscita dalla WebView di AdMob: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_admob[1]), 'ms')))  
+        if(name=="Facebook"): #facebook ha il last-exit-info sia della WebView e sia della WebView associata ad un browser
+            if cellulare['/data/data/com.facebook.katana/app_browser_proc_webview/last-exit-info'] is not None:
+                ts_browser=cellulare['/data/data/com.facebook.katana/app_browser_proc_webview/last-exit-info'].Data.read().split(',')[1].split(':') #prendi il timestamp di last-exit-info che si riferisce al webview del browser
+                last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]), 'ms')))+"\nUltima uscita dalla WebView del browser: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_browser[1]),'ms')))  
+            
+        elif(name=="Google Play"): #Google Play ha il last-exit info sia della WebView e sia della WebView associata a AdMob
+            if cellulare['/data/data/com.google.android.gms/app_webview_admob-service/last-exit-info'] is not None:
+                ts_admob=cellulare['/data/data/com.google.android.gms/app_webview_admob-service/last-exit-info'].Data.read().split(',')[1].split(':')
+                last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms')))+"\nUltima uscita dalla WebView di AdMob: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_admob[1]), 'ms')))  
+                
+        elif(name=="Microsoft 365(Office)"): #Microsoft 365 ha il last-exit info sia della WebView riferita all'applicazione generale e sia della WebView associata specifichitamente ad Excel
+            if cellulare['/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officemobile.excel/last-exit-info'] is not None:
+                ts_excel=cellulare['/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officemobile.excel/last-exit-info'].Data.read().split(',')[1].split(':')
+                last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]), 'ms')))+"\nUltima uscita dalla WebView di Excel: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_excel[1]),'ms')))  
+        else:
+            last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms'))) #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
         
-    elif(name=="Microsoft 365(Office)"): #Microsoft 365 ha il last-exit info sia della WebView riferita all'applicazione generale e sia della WebView associata specifichitamente ad Excel
-        ts_excel=cellulare['/data/data/com.microsoft.office.officehubrow/app_webview_com.microsoft.office.officemobile.excel/last-exit-info'].Data.read().split(',')[1].split(':')
-        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]), 'ms')))+"\nUltima uscita dalla WebView di Excel: "+str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts_excel[1]),'ms')))  
-        #ds.Models.Add(last_exit)
-    else:
-        last_exit.Value.Value="Ultima uscita dalla WebView: "+ str(TimeStamp.FromUnixTime(int64_to_unixtimestamp(int(ts[1]),'ms'))) #prendi il timestamp contenuto nel file last-exit-info splittando prima per , e poi splittando il secondo elemento per :
-    
-    ds.Models.Add(last_exit)
+        ds.Models.Add(last_exit)
 
 def main():    
     print("******NUOVA ESECUZIONE********")
@@ -563,106 +569,200 @@ def main():
     
     for app in listapp: #puoi anche fare direttamente con if any("paypal" in app for app in listapp)
         if "paypal" in app: #se è presente paypal nelle app installate
-            Paypal_Parsing()
-            
+            try:
+                Paypal_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+        
         elif "ryanair" in app:
-            Ryanair_Parsing()
-            
+            try:
+                Ryanair_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "justeat" in app:
-            JustEat_Parsing()
-        
+            try:
+                JustEat_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "googlequicksearchbox" in app:
-            GoogleQuickSearchBox_Parsing()
-            
+            try:
+                GoogleQuickSearchBox_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "outlook" in app:
-            Outlook_Parsing()
-        
+            try:
+                Outlook_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "facebook.katana" in app:
-            Facebook_Parsing()
-        
+            try:
+                Facebook_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "telegram" in app:
-            Telegram_Parsing()
-            
+            try:
+                Telegram_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "com.google.android.gm" in app:
             if (f_gmail==False): #se non è stato ancora trovata una corrispondenza tra la lista di app
-                Gmail_Parsing()
-                f_gmail=True #la corrispondeza è già stata trovata quindi metti a True il flag in modo da evitare di aggiungere più volte la stessa cosa essendo che gmail ha più rispondenti
-            
+                try:
+                    Gmail_Parsing()
+                    f_gmail=True #la corrispondeza è già stata trovata quindi metti a True il flag in modo da evitare di aggiungere più volte la stessa cosa essendo che gmail ha più rispondenti
+                except Exception as e:
+                    print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
             
         elif "play.games" in app:
-            GooglePlay_Parsing()
-        
+            try:
+                GooglePlay_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "eurosport" in app:
-            Eurosport_Parsing()
-        
+            try:
+                Eurosport_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "mcdonalds" in app:
-            McDonalds_Parsing()
-            
+            try:
+                McDonalds_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "instagram" in app: 
-            Instagram_Parsing()
-            
+            try:
+                Instagram_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "gazzetta" in app:
-            LaGazzettaDelloSport_Parsing()
-            
+            try:
+                LaGazzettaDelloSport_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "latuabancaperandroid" in app:
-            IntesaSanPaoloMobile_Parsing()
-            
+            try:
+                IntesaSanPaoloMobile_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "samsungapps" in app:
-            SamsungApps_Parsing()
-            
+            try:
+                SamsungApps_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "quadronica.leghe" in app:
-            LegheFC_Parsing()
-        
+            try:
+                LegheFC_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "whatsapp" in app:
-            WhatsApp_Parsing()
-        
+            try:
+                WhatsApp_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "google.android.captiveportallogin" in app:
-            CaptivePortalLogin_Parsing()
-        
+            try:
+                CaptivePortalLogin_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "prontotreno" in app:
-            Trenitalia_Parsing()
-        
+            try:
+                Trenitalia_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "unicredit" in app:
-            Unicredit_Parsing()
-            
+            try:
+                Unicredit_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "italotreno" in app:
-            ItaloTreno_Parsing()
-            
+            try:
+                ItaloTreno_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "osp.app" in app:
-            SamsungAccount_Parsing()
-            
+            try:
+                SamsungAccount_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "com.google.android.apps.docs" in app:
             if (f_grdive==False):
-                GoogleDrive_Parsing()
-                f_grdive=True
-         
+                try:
+                    GoogleDrive_Parsing()
+                    f_grdive=True
+                except Exception as e:
+                    print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+        
         elif "officehubrow" in app:
-            Microsoft365Office_Parsing()
-        
+            try:
+                Microsoft365Office_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "yana.zeropage" in app:  
-            Upday_Parsing()
-            
+            try:
+                Upday_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "atm.appmobile" in app:
-            ATMMilano_Parsing()
-            
+            try:
+                ATMMilano_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "teams" in app:
-            Teams_Parsing()
-        
+            try:
+                Teams_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "youtube" in app:
-            Youtube_Parsing()
-          
+            try:
+                Youtube_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "vodafone" in app:
-            Vodafone_Parsing()
-        
+            try:
+                Vodafone_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "protonvpn" in app:
-            ProtonVPN_Parsing()
-        
+            try:
+                ProtonVPN_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "aptoide" in app:
-            Aptoide_Parsing()
-            
+            try:
+                Aptoide_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "teamviewer" in app:
-            Teamviewer_Parsing()
-            
+            try:
+                Teamviewer_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
         #elif "projection.gearhead" in app:
         #    AndroidAuto_Parsing()
         
@@ -670,20 +770,34 @@ def main():
         #    Zoom_Parsing()
        
         elif "booking" in app:
-            Booking_Parsing()
-       
+            try:
+                Booking_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+            
         elif "glovo" in app:
-            Glovo_Parsing()
-            
+            try:
+                Glovo_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "deliveroo" in app:
-            Deliveroo_Parsing()
-            
+            try:
+                Deliveroo_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         elif "netflix.mediaclient" in app:
-            Netflix_Parsing()
-        
+            try:
+                Netflix_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
+                
         if "italotreno" in app: #con elif non funziona e viene ignorata la condizione
-            Italo_Parsing()
-        
+            try:
+                Italo_Parsing()
+            except Exception as e:
+                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
         #elif "flixbus" in app:
         #    FlixBus_Parsing()
         
