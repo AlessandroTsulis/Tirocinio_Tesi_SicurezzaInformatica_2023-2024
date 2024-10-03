@@ -1,6 +1,7 @@
-# coding=utf-8 per definire l'encoding (altrimenti da errore)
+# coding=utf-8 per definire l'encoding
 #script per fare il parsing dei database di applicazioni non considerate da UFED e aggiungere nuovi elementi al datastore
-#importa questo script come decoding scope, ricorda che se vuoi aggiungere degli elementi al data tree d utilizzare il decoding scope (l'applicative scope serve modificare elementi già presenti) 
+#importa questo script come decoding scope
+
 from physical import * #per utilizzare le API UFED in script esterni (librerie per il decoding scope)
 import sys
 import SQLiteParser #libreria per il parsing di database
@@ -32,7 +33,7 @@ def Check_Hash(): #funzione che prende l'hash delle applicazioni e lo aggiunge a
     for pacchetto in gass_db['app_info']: 
         hash_app.Value.Value=hash_app.Value.Value+str(pacchetto['package_name'].Value)+': '+str(pacchetto['digest_sha256'].Value) #riempi il CarvedString con il nome dei package e il loro hash
         
-        if (number_request<4): #senza l'abbonamento a VirusTotal hai 4 HTTP request con l'API al minuto (teoricamente, in pratica pare che il limite sia 11, ma dopo la 5 da errori meglio non rischiare) 
+        if (number_request<4): #senza l'abbonamento a VirusTotal hai 4 HTTP request con l'API al minuto 
             reputation=Check_VirusTotal_Reputation(str(pacchetto['digest_sha256'].Value), "0ce5dc209e7723d66c658bcae2da3f77bed7b95ffd56171ffb38cc1e91b97436") #controlla con Virustotal il livello di reputazione dell'app tramite hash, l'api key è pubblica e non è premium
             number_request=number_request+1
             
@@ -56,7 +57,7 @@ def Check_VirusTotal_Reputation(hash, apikey): #funzione che utilizza virustotal
         
 
 
-def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal(utile solo il parsing del file last_exit_info)
+def Paypal_Parsing(): #funzione che fa il parsing dei database di paypal
     WebView_LastExit('/data/data/com.paypal.android.p2pmobile/app_webview/last-exit-info',"Paypal")
     
     
@@ -64,7 +65,7 @@ def Ryanair_Parsing():
     frlocal_db=SQLiteParser.Database.FromNode(cellulare['/data/data/com.ryanair.cheapflights/databases/fr-local-db'])
     
     if frlocal_db is not None:    
-        for stazione in frlocal_db['recent_stations']:  #Per aggiungere le ricerce effettuate
+        for stazione in frlocal_db['recent_stations']:  #per aggiungere le ricerce effettuate
             ricerca=SearchedItem() #crea il modello elemento cercato
             ricerca.Source.Value="Ryanair"
             ricerca.Deleted=DeletedState.Intact
@@ -87,7 +88,7 @@ def Ryanair_Parsing():
                
             account.TimeCreated.Value=TimeStamp.FromUnixTime(int64_to_unixtimestamp(profilo['member_since'].Value, 'ms')) #trasfroma da int64 a timestamp unix con il timestamp in millisecondi e poi da unix timestamp a timestamp di UFED e lo assegna alla data di crezione dell'account
             
-            if IsDBNull (profilo['phone_number'].Value) == False: #se la colonna del database non è vuota, ANDREBBE FATTO OGNI VOLTA CHE SI GUARDA UNA COLONNA DI UN DATABASE ALTRIMENTI L'ASSEGNAMENTO A NULL DA ERRORE
+            if IsDBNull (profilo['phone_number'].Value) == False: #se la colonna del database non è vuota
                 cel=PhoneNumber() #crea il modello cellulare
                 cel.Value.Value=profilo['phone_number'].Value
                 account.Entries.Add(cel) #aggiungi l'entry del numero di cellulare nel profilo
@@ -168,8 +169,7 @@ def CaptivePortalLogin_Parsing(): #servizio di login per portal captive dove i p
 def Trenitalia_Parsing():
     WebView_LastExit('/data/data/com.lynxspa.prontotreno/app_webview/last-exit-info',"Trenitalia")
     
-    adobemobile=cellulare['/data/data/com.lynxspa.prontotreno/shared_prefs/AdobeMobile_Lifecycle.xml'].Data.read() #PENSA SE USARE UNA FUNZIONE APPOSITA PER IL PARSING DI TUTTI GLI ADOBEMOBOBILE COME PER I LAST_EXIT
-    
+    adobemobile=cellulare['/data/data/com.lynxspa.prontotreno/shared_prefs/AdobeMobile_Lifecycle.xml'].Data.read() 
     usoapp=ApplicationUsage() #aggiungi un modello per l'uso di un applicazione
     usoapp.Deleted=DeletedState.Intact
     usoapp.Source.Value='Trenitalia'
@@ -245,7 +245,6 @@ def Aptoide_Parsing():
         notifica=Notification() 
         
         if IsDBNull(notification['body'].Value) == False:
-            #print(notification['body'].Value)
             notifica.Body.Value=notification['body'].Value #aggiungi il body della notifica
             
         if notification['timeStamp'].Value> 0:
@@ -304,14 +303,6 @@ def Teamviewer_Parsing():
  
  
     ds.Models.Add(stringa)
-    
-#def AndroidAuto_Parsing():
-    #da fare eventualmente il parsing del file primes.xml
-    #pass
-
-#def Zoom_Parsing():
-    #trovato nulla
-#    pass
     
 def Booking_Parsing():
     notifications_db= SQLiteParser.Database.FromNode(cellulare['/data/data/com.booking/databases/notifications.db'])
@@ -391,7 +382,7 @@ def Booking_Parsing():
     stringa.Value.Value="PRENOTAZIONI"+'\n'
     
     
-    for prenotazione in postbooking_db['records']: #scorri tutti i record del database postbooking (SEMBRA CHE QUESTO DATABASE VENGA SCORSO DAL BASSO VERSO L'ALTO, CONTROLLA)
+    for prenotazione in postbooking_db['records']: #scorri tutti i record del database postbooking
         if str(prenotazione['key'].Value).endswith('.reservation.property'): #se la stringa termina con .reservation.property 
             stringa.Value.Value=stringa.Value.Value+"Luogo: "+str(prenotazione['record'].Value).split(':"')[1].split('"')[0]+"   "
         
@@ -507,18 +498,12 @@ def Italo_Parsing():
     
     ds.Models.Add(usoapp)
 
-#def FlixBus_Parsing(): 
-#    pass
-    
-#def Chess_Parsing(): 
-#    pass
-
 
 
 def int64_to_unixtimestamp(tp, type):  #funzione che trasforma da int64 a unixtimestamp     
     if (type=='ms'): # se il timestamp è in millisecondi
     
-        dt=datetime.datetime.fromtimestamp(tp/1000) #trasforma da timestamp a datetime, il timestamp è in millisecondi quindi si divide per 1000, se fosse in microsecondi dividi per 1000000, in nanosecondi dividi per 1000000000
+        dt=datetime.datetime.fromtimestamp(tp/1000) #trasforma da timestamp a datetime, il timestamp è in millisecondi quindi si divide per 1000
     
     if (type=='s'): # se il timestamp è in secondi
         
@@ -567,8 +552,8 @@ def main():
     f_gmail=False #flag per controllare più occorrenze di gmail
     f_grdive=False #flag per controllare più occorrenze googledrive
     
-    for app in listapp: #puoi anche fare direttamente con if any("paypal" in app for app in listapp)
-        if "paypal" in app: #se è presente paypal nelle app installate
+    for app in listapp:
+        if "paypal" in app: 
             try:
                 Paypal_Parsing()
             except Exception as e:
@@ -690,12 +675,6 @@ def main():
             except Exception as e:
                 print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
                 
-        elif "italotreno" in app:
-            try:
-                ItaloTreno_Parsing()
-            except Exception as e:
-                print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
-                
         elif "osp.app" in app:
             try:
                 SamsungAccount_Parsing()
@@ -763,11 +742,6 @@ def main():
                 Teamviewer_Parsing()
             except Exception as e:
                 print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
-        #elif "projection.gearhead" in app:
-        #    AndroidAuto_Parsing()
-        
-        #elif "zoom" in app:
-        #    Zoom_Parsing()
        
         elif "booking" in app:
             try:
@@ -793,16 +767,11 @@ def main():
             except Exception as e:
                 print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
                 
-        if "italotreno" in app: #con elif non funziona e viene ignorata la condizione
+        if "italotreno" in app:
             try:
                 Italo_Parsing()
             except Exception as e:
                 print("Eccezione nel parsing di "+ app +" -> "+e.__class__.__name__)
-        #elif "flixbus" in app:
-        #    FlixBus_Parsing()
-        
-        #elif "chess" in app: 
-        #    Chess_Parsing()
         
 
 main()

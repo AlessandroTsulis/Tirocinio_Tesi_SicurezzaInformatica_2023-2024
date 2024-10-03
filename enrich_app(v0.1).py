@@ -1,6 +1,6 @@
-# coding=utf-8 per definire l'encoding(altrimenti da errore)
+# coding=utf-8 per definire l'encoding
 #script per arricchire le applicazioni e gli elementi già presenti del datastore
-#ricorda di importare questo script come applicative scope perchè va a modificare gli elementi InstalledApplication già presenti del data tree
+#importa questo script come applicative scope
 
 import physical #per utilizzare le API di UFED in script esterni in applicative scope
 import PAphysical as PAP
@@ -22,9 +22,7 @@ def Enrich_App(): #funzione che arricchisce le informazioni delle applicazioni e
             if (type(modello)== PAP.PA.Data.Models.CarvedString): #se il modello è un CarvedString
                 if (modello.Source.Value=="Hash App"): #se il CarvedString è quello degli hash delle app
                     hashapp=str(modello.Value.Value)
-                
-                 
-                    ###stringa.Value.Value=""  #svuota il file Hash App
+                    
     
     elencopermessi={}
     runtimepermission=cellulare['data/misc_de/0/apexdata/com.android.permission/runtime-permissions.xml'].Data.read().split('<package name=') #leggi i dti di runtime-permission per pacchetto
@@ -38,8 +36,7 @@ def Enrich_App(): #funzione che arricchisce le informazioni delle applicazioni e
                     app.Description.Value='Applicazione disinstallata'
                 
                 
-                for riga in range(hashapp.count(':')): #conta il numero di occorrenze di ':' nella stringa (tempo di esecuzione sul ROG circa 2 ore prendendo circa 470 HASH dalla mia acqsuisizione)
-                #for riga in range(5): #PER EVITARE TEMPI MOLTO LUNGHI
+                for riga in range(hashapp.count(':')): #conta il numero di occorrenze di ':' nella stringa
                     apphash=hashapp.split('\n')[riga].split(': ')  
                     if app.Identifier.Value == apphash[0]: #se l'applicazione è presente nel file hash app
                         app.AppGUID.Value= apphash[1] #aggiungi all'InstalledApplication il suo hash 
@@ -176,7 +173,7 @@ def Enrich_App(): #funzione che arricchisce le informazioni delle applicazioni e
                 
                 
    
-    for modelcollection in list(ds.Models): #scorri di nuovo le InstalledApplication (per evitare l'errore "Collection was modified; enumeration operation may not execute" se si aggiungevano i permessi durante l'iterazione)    
+    for modelcollection in list(ds.Models): #scorri di nuovo le InstalledApplication 
         for app in modelcollection:
             if (type(app)== PAP.PA.Data.Models.ApplicationModels.InstalledApplication):
                 for pacchetto,permesso in elencopermessi.items():
